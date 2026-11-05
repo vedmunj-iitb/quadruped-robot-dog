@@ -1,9 +1,9 @@
 # robot-dog-ros2-sim
 
 The 8-servo robot dog from my Robotics course project (ME 604), simulated in Gazebo with ROS 2
-Jazzy. It walks, trots, turns, holds its heading with an IMU, stands and sits like the course
-robot, and follows a figure-8 round two posts. A C++ gait node works out where each foot should
-be, solves the leg inverse kinematics and sends the 8 joint angles to ros2_control.
+Jazzy. Like the course robot, it walks, turns, stands and sits. It also trots, holds its heading
+with an IMU and follows a figure-8 round two posts. A C++ gait node works out where each foot
+should be, solves the leg inverse kinematics and sends the 8 joint angles to ros2_control.
 
 ![The robot dog walking in Gazebo (floor marks every 10 cm added for the recording)](docs/walk.gif)
 
