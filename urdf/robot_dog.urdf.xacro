@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<!-- The robot dog from the ME 604 course project: a 150 x 97.5 mm body and four legs, each
+     with a 67 mm femur and a 75 mm tibia and an MG90S servo at the hip and at the knee.
+     The masses and the hip positions are estimates.
+     Physics uses a few simple shapes (a box body and ball feet). The extra visuals only make it
+     look like the real robot: the red printed plate and legs, the servos, the boards. -->
+<robot name="robot_dog" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:property name="femur" value="0.067"/>
+  <xacro:property name="tibia" value="0.075"/>
+  <xacro:property name="hip_x" value="0.060"/>   <!-- hip axes from the body centre (estimates) -->
+  <xacro:property name="hip_y" value="0.0575"/>
+  <xacro:property name="torque" value="0.2"/>    <!-- N m, about the stall torque of an MG90S -->
+  <xacro:property name="speed" value="10"/>      <!-- rad/s, an MG90S turns 60 degrees in 0.1 s -->
+  <xacro:property name="shaft" value="0.0055"/>  <!-- a servo shaft is 5.5 mm from the middle of its long side -->
+
+  <material name="red"><color rgba="0.85 0.12 0.12 1"/></material>
+  <material name="dark"><color rgba="0.12 0.12 0.12 1"/></material>
+  <material name="servo_blue"><color rgba="0.20 0.35 0.85 1"/></material>
+  <material name="pcb"><color rgba="0.10 0.30 0.65 1"/></material>
+  <material name="perfboard"><color rgba="0.60 0.40 0.20 1"/></material>
+  <material name="silver"><color rgba="0.75 0.75 0.75 1"/></material>
+  <material name="yellow"><color rgba="0.90 0.80 0.10 1"/></material>
+
+  <!-- inertia of a solid box of mass m and size x, y, z, centred at height oz -->
+  <xacro:macro name="box_inertia" params="m x y z oz">
+    <inertial>
+      <origin xyz="0 0 ${oz}"/>
+      <mass value="${m}"/>
+      <inertia ixx="${m * (y*y + z*z) / 12}" ixy="0" ixz="0"
+               iyy="${m * (x*x + z*z) / 12}" iyz="0"
+               izz="${m * (x*x + y*y) / 12}"/>
+    </inertial>
+  </xacro:macro>
+
+  <!-- a box that is only drawn, with no mass and no collision -->
+  <xacro:macro name="part" params="size xyz color">
+    <visual>
+      <origin xyz="${xyz}"/>
+      <geometry><box size="${size}"/></geometry>
+      <material name="${color}"/>
+    </visual>
+  </xacro:macro>
+
+  <!-- a disc across the leg (a servo horn or a rounded end), only drawn -->
+  <xacro:macro name="disc" params="radius length xyz color">
+    <visual>
+      <origin xyz="${xyz}" rpy="${pi / 2} 0 0"/>
+      <geometry><cylinder radius="${radius}" length="${length}"/></geometry>
+      <material name="${color}"/>
+    </visual>
+  </xacro:macro>
+
+  <!-- body: the printed chassis with the electronics, batteries and the four hip servos.
+       The collision box and the inertia stand for all of it. -->
+  <link name="base_link">
+    <xacro:part size="0.150 0.0975 0.003" xyz="0 0 0.0135" color="red"/>                <!-- plate -->
+    <xacro:part size="0.077 0.021 0.021" xyz="0 0.012 0.0015" color="dark"/>            <!-- battery holders -->
+    <xacro:part size="0.077 0.021 0.021" xyz="0 -0.012 0.0015" color="dark"/>
+    <xacro:part size="0.0228 0.0225 0.0122" xyz="${hip_x - shaft} 0.045 0.006" color="dark"/>   <!-- hip servos -->
+    <xacro:part size="0.0228 0.0225 0.0122" xyz="${hip_x - shaft} -0.045 0.006" color="dark"/>
+    <xacro:part size="0.0228 0.0225 0.0122" xyz="${-hip_x + shaft} 0.045 0.006" color="dark"/>
+    <xacro:part size="0.0228 0.0225 0.0122" xyz="${-hip_x + shaft} -0.045 0.006" color="dark"/>
+    <xacro:part size="0.060 0.030 0.0016" xyz="-0.040 0.022 0.0158" color="pcb"/>       <!-- power board -->
+    <xacro:part size="0.014 0.013 0.006" xyz="-0.064 0.030 0.0196" color="silver"/>     <!-- its USB ports -->
+    <xacro:part size="0.014 0.013 0.006" xyz="-0.064 0.013 0.0196" color="silver"/>
+    <xacro:part size="0.062 0.025 0.0016" xyz="0.020 -0.022 0.0158" color="pcb"/>       <!-- servo driver -->
+    <xacro:part size="0.040 0.008 0.009" xyz="0.020 -0.012 0.0212" color="yellow"/>     <!-- its servo pins -->
+    <xacro:part size="0.003 0.045 0.048" xyz="0.072 0 0.039" color="perfboard"/>        <!-- front board -->
+    <xacro:part size="0.003 0.026 0.034" xyz="0.0748 0 0.034" color="pcb"/>             <!-- ESP8266 -->
+    <collision>
+      <geometry><box size="0.150 0.0975 0.025"/></geometry>
+    </collision>
+    <xacro:box_inertia m="0.30" x="0.150" y="0.0975" z="0.025" oz="0"/>
+  </link>
+
+  <!-- one leg: hip joint, femur, knee joint, tibia with a ball foot.
+       side is 1 for a left leg and -1 for a right leg. side * y moves a part outwards and
+       -side * y inwards (the knee servo sits on the inner side of the thigh). -->
+  <xacro:macro name="leg" params="name x y side">
+    <joint name="${name}_hip" type="revolute">
+      <parent link="base_link"/>
+      <child link="${name}_thigh"/>
+      <origin xyz="${x} ${y} 0"/>
+      <axis xyz="0 -1 0"/>  <!-- positive swings the leg forward, as in leg.hpp -->
+      <limit lower="-1.57" upper="1.57" effort="${torque}" velocity="${speed}"/>
+    </joint>
+
+    <link name="${name}_thigh">
+      <xacro:part size="0.012 0.006 ${femur}" xyz="0 ${side * 0.003} ${-femur / 2}" color="red"/>
+      <xacro:disc radius="0.006" length="0.006" xyz="0 ${side * 0.003} 0" color="red"/>
+      <xacro:disc radius="0.006" length="0.006" xyz="0 ${side * 0.003} ${-femur}" color="red"/>
+      <xacro:disc radius="0.004" length="0.002" xyz="0 ${side * 0.007} 0" color="dark"/>  <!-- hip horn -->
+      <xacro:part size="0.0122 0.0225 0.0228" xyz="0 ${-side * 0.0115} ${-femur + shaft}"
+                  color="servo_blue"/>  <!-- knee servo -->
+      <xacro:box_inertia m="0.025" x="0.014" y="0.014" z="${femur}" oz="${-femur / 2}"/>
+    </link>
+
+    <joint name="${name}_knee" type="revolute">
+      <parent link="${name}_thigh"/>
+      <child link="${name}_shin"/>
+      <origin xyz="0 0 ${-femur}"/>
+      <axis xyz="0 -1 0"/>
+      <limit lower="0" upper="2.8" effort="${torque}" velocity="${speed}"/>
+    </joint>
+
+    <link name="${name}_shin">
+      <xacro:part size="0.010 0.005 ${tibia}" xyz="0 ${side * 0.0085} ${-tibia / 2}" color="red"/>
+      <xacro:disc radius="0.005" length="0.005" xyz="0 ${side * 0.0085} 0" color="red"/>
+      <xacro:disc radius="0.004" length="0.002" xyz="0 ${side * 0.012} 0" color="dark"/>  <!-- knee horn -->
+      <visual>
+        <origin xyz="0 0 ${-tibia}"/>
+        <geometry><sphere radius="0.008"/></geometry>
+        <material name="dark"/>
+      </visual>
+      <collision>
+        <origin xyz="0 0 ${-tibia}"/>
+        <geometry><sphere radius="0.008"/></geometry>
+      </collision>
+      <xacro:box_inertia m="0.010" x="0.010" y="0.010" z="${tibia}" oz="${-tibia / 2}"/>
+    </link>
+
+    <gazebo reference="${name}_shin">
+      <mu1>1.0</mu1>
+      <mu2>1.0</mu2>
+    </gazebo>
+  </xacro:macro>
+
+  <xacro:leg name="FL" x="${hip_x}" y="${hip_y}" side="1"/>
+  <xacro:leg name="FR" x="${hip_x}" y="${-hip_y}" side="-1"/>
+  <xacro:leg name="RL" x="${-hip_x}" y="${hip_y}" side="1"/>
+  <xacro:leg name="RR" x="${-hip_x}" y="${-hip_y}" side="-1"/>
+
+  <!-- ros2_control: every joint takes a position command and reports position, velocity
+       and effort (the joint torque) -->
+  <xacro:macro name="servo" params="joint">
+    <joint name="${joint}">
+      <command_interface name="position"/>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+      <state_interface name="effort"/>
+    </joint>
+  </xacro:macro>
+
+  <ros2_control name="GazeboSimSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <xacro:servo joint="FL_hip"/>
+    <xacro:servo joint="FL_knee"/>
+    <xacro:servo joint="FR_hip"/>
+    <xacro:servo joint="FR_knee"/>
+    <xacro:servo joint="RL_hip"/>
+    <xacro:servo joint="RL_knee"/>
+    <xacro:servo joint="RR_hip"/>
+    <xacro:servo joint="RR_knee"/>
+  </ros2_control>
+
+  <!-- an IMU in the body, for the heading -->
+  <gazebo reference="base_link">
+    <sensor name="imu" type="imu">
+      <always_on>true</always_on>
+      <update_rate>100</update_rate>
+      <topic>imu</topic>
+      <gz_frame_id>base_link</gz_frame_id>
+    </sensor>
+  </gazebo>
+
+  <gazebo>
+    <!-- runs the ros2_control controller manager inside Gazebo -->
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find robot_dog_sim)/config/controllers.yaml</parameters>
+    </plugin>
+    <!-- the body's true position, to see how far the dog walked -->
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <dimensions>3</dimensions>
+    </plugin>
+  </gazebo>
+</robot>
