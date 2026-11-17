@@ -1,4 +1,7 @@
-# robot-dog-ros2-sim
+# The robot dog in ROS 2 and Gazebo
+
+This folder is the simulation part of [quadruped-robot-dog](../README.md). It started as a
+separate repo, `robot-dog-ros2-sim`, and was moved here with its history.
 
 The 8-servo robot dog from my Robotics course project (ME 604), simulated in Gazebo with ROS 2
 Jazzy. Like the course robot, it walks, turns, stands and sits. It also trots, holds its heading
@@ -10,6 +13,10 @@ should be, solves the leg inverse kinematics and sends the 8 joint angles to ros
 ![The robot dog walking a figure-8 round two posts, with the path of its body drawn in](docs/figure8.gif)
 
 ![The robot dog walks, stands, sits, stands up and walks on, sent on the /mode topic](docs/sit_stand.gif)
+
+![The trot at half speed: diagonal legs move together, 0.35 s per cycle (floor marks every 10 cm added for the recording)](docs/trot.gif)
+
+![Steering on /cmd_vel at 2x speed: straight, a left turn, straight, a right turn, straight, with both turns sent as 0.4 rad/s. The blue line is the body's path from /odom (10 cm floor grid added for the recording)](docs/steer.gif)
 
 The course robot, built by a 6-member team, walked on servo angles tuned by hand, pose by pose.
 This simulation was written in 2026, after the course. It makes the gait from foot paths instead,
@@ -125,7 +132,7 @@ Build it in a workspace:
 ```bash
 source /opt/ros/jazzy/setup.bash
 mkdir -p ~/dog_ws/src
-cp -r robot-dog-ros2-sim ~/dog_ws/src/
+git clone https://github.com/vedmunj-iitb/quadruped-robot-dog.git ~/dog_ws/src/quadruped-robot-dog
 cd ~/dog_ws
 colcon build
 source ~/dog_ws/install/setup.bash
