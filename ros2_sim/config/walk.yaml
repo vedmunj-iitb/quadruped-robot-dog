@@ -1,0 +1,11 @@
+# Write every number with a decimal point (2.0, not 2). The node reads them as doubles.
+gait_node:
+  ros__parameters:
+    gait: walk         # one leg at a time, three feet always on the ground
+    period: 0.8        # s, one gait cycle
+    speed: 0.06        # m/s, used until a cmd_vel arrives
+    height: 0.10       # m, hip above the centre of the foot ball
+    lift: 0.02         # m, how high a foot rises in the swing
+    max_stride: 0.06   # m
+    stand_time: 2.0    # s, standing still before the first step
+    heading_gain: 1.0  # rad/s of turn per rad of heading error, 0.0 = no heading hold

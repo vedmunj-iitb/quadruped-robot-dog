@@ -1,0 +1,27 @@
+# gz_ros2_control turns a position error into a joint speed:
+# speed = gain * update_rate * error, here 0.05 * 1000 = 50 rad/s per rad of error.
+gz_ros_control:
+  ros__parameters:
+    position_proportional_gain: 0.05
+
+controller_manager:
+  ros__parameters:
+    update_rate: 1000  # Hz, the same as the physics step
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    leg_controller:
+      type: position_controllers/JointGroupPositionController
+
+leg_controller:
+  ros__parameters:
+    joints:  # the order of the 8 angles in leg_controller/commands
+      - FL_hip
+      - FL_knee
+      - FR_hip
+      - FR_knee
+      - RL_hip
+      - RL_knee
+      - RR_hip
+      - RR_knee

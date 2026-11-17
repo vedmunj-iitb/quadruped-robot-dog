@@ -1,0 +1,13 @@
+# A figure-8 round two posts at (0, 0.25) and (0, -0.25): two circles of radius 0.25 m that
+# meet at (0, 0), where the dog starts. 8 waypoints on each circle, x and y in metres.
+# Write every number with a decimal point (2.0, not 2). The node reads them as doubles.
+path_node:
+  ros__parameters:
+    waypoints: [0.177, 0.073,   0.25, 0.25,   0.177, 0.427,   0.0, 0.5,       # left circle,
+                -0.177, 0.427,  -0.25, 0.25,  -0.177, 0.073,  0.0, 0.0,       # anticlockwise
+                0.177, -0.073,  0.25, -0.25,  0.177, -0.427,  0.0, -0.5,      # right circle,
+                -0.177, -0.427, -0.25, -0.25, -0.177, -0.073, 0.0, 0.0]       # clockwise
+    speed: 0.06       # m/s when facing the waypoint
+    max_turn: 0.4     # rad/s
+    turn_gain: 1.5    # rad/s of turn per rad of heading error
+    reach: 0.06       # m, this close counts as reached
